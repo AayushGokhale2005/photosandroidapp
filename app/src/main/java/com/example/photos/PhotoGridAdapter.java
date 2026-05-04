@@ -2,8 +2,6 @@ package com.example.photos;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
@@ -17,8 +15,6 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.photos.model.Photo;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -61,29 +57,37 @@ public class PhotoGridAdapter extends RecyclerView.Adapter<PhotoGridAdapter.View
     }
 
     @Override
-    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        // Enforce square cells using the RecyclerView's current width
+    public void onViewAttachedToWindow(@NonNull ViewHolder holder) {
+        super.onViewAttachedToWindow(holder);
+        // Enforce square cells after the RecyclerView has been laid out
         RecyclerView rv = (RecyclerView) holder.itemView.getParent();
         if (rv != null && rv.getWidth() > 0) {
-            int columns = ((GridLayoutManager) rv.getLayoutManager()).getSpanCount();
+            GridLayoutManager glm = (GridLayoutManager) rv.getLayoutManager();
+            int columns = glm != null ? glm.getSpanCount() : 3;
             int cellSize = rv.getWidth() / columns;
             ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
+            lp.width  = cellSize;
             lp.height = cellSize;
             holder.itemView.setLayoutParams(lp);
         }
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Photo photo = photos.get(position);
         holder.imageThumb.setImageBitmap(null);
-        holder.imageThumb.setBackgroundColor(0xFFCCCCCC);
+        holder.imageThumb.setBackgroundColor(0xFF1A1A1A);
 
         String uriStr = photo.getUriString();
         executor.execute(() -> {
-            Bitmap bmp = loadThumbnail(uriStr, 400);
+            Bitmap bmp = ImageLoader.loadScaled(context, uriStr, 300);
             mainHandler.post(() -> {
                 if (holder.getAdapterPosition() == position) {
                     if (bmp != null) {
                         holder.imageThumb.setImageBitmap(bmp);
+                        holder.imageThumb.setBackgroundColor(0x00000000);
                     } else {
-                        holder.imageThumb.setBackgroundColor(0xFF888888);
+                        holder.imageThumb.setBackgroundColor(0xFF333333);
                     }
                 }
             });
@@ -102,36 +106,6 @@ public class PhotoGridAdapter extends RecyclerView.Adapter<PhotoGridAdapter.View
     @Override
     public int getItemCount() {
         return photos.size();
-    }
-
-    private Bitmap loadThumbnail(String uriString, int targetPx) {
-        try {
-            Uri uri = Uri.parse(uriString);
-            BitmapFactory.Options bounds = new BitmapFactory.Options();
-            bounds.inJustDecodeBounds = true;
-            try (InputStream is = context.getContentResolver().openInputStream(uri)) {
-                if (is == null) return null;
-                BitmapFactory.decodeStream(is, null, bounds);
-            }
-
-            int inSample = 1;
-            if (bounds.outWidth > targetPx || bounds.outHeight > targetPx) {
-                int halfW = bounds.outWidth / 2;
-                int halfH = bounds.outHeight / 2;
-                while ((halfW / inSample) >= targetPx && (halfH / inSample) >= targetPx) {
-                    inSample *= 2;
-                }
-            }
-
-            BitmapFactory.Options opts = new BitmapFactory.Options();
-            opts.inSampleSize = inSample;
-            try (InputStream is2 = context.getContentResolver().openInputStream(uri)) {
-                if (is2 == null) return null;
-                return BitmapFactory.decodeStream(is2, null, opts);
-            }
-        } catch (IOException | SecurityException e) {
-            return null;
-        }
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {

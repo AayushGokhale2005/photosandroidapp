@@ -3,11 +3,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
-        android:id="@+id/action_add_tag"
-        android:title="Add Tag"
-        app:showAsAction="ifRoom" />
-
-    <item
         android:id="@+id/action_move"
         android:title="Move to Album"
         app:showAsAction="never" />

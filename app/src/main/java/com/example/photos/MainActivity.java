@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         PhotoLibrary.getInstance().load(this);
+        PhotoLibrary.getInstance().seedStockAlbum(this);
 
         RecyclerView recycler = findViewById(R.id.recyclerAlbums);
         recycler.setLayoutManager(new LinearLayoutManager(this));

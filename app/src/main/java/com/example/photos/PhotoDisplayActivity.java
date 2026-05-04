@@ -1,33 +1,39 @@
 package com.example.photos;
 
+import android.database.Cursor;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.MediaStore;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.photos.model.Album;
 import com.example.photos.model.Photo;
 import com.example.photos.model.PhotoLibrary;
 import com.example.photos.model.Tag;
+import com.google.android.material.chip.Chip;
+import com.google.android.material.chip.ChipGroup;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -40,9 +46,14 @@ public class PhotoDisplayActivity extends AppCompatActivity {
     protected int photoIndex;
 
     private ImageView imagePhoto;
-    private TagListAdapter tagAdapter;
+    private ChipGroup chipGroupTags;
+    private TextView tvNoTags;
+    private TextView tvPhotoDate;
+
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
+    private static final SimpleDateFormat DATE_FMT =
+            new SimpleDateFormat("MMMM d, yyyy  h:mm a", Locale.getDefault());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,21 +69,18 @@ public class PhotoDisplayActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
 
-        imagePhoto = findViewById(R.id.imagePhoto);
+        imagePhoto    = findViewById(R.id.imagePhoto);
+        chipGroupTags = findViewById(R.id.chipGroupTags);
+        tvNoTags      = findViewById(R.id.tvNoTags);
+        tvPhotoDate   = findViewById(R.id.tvPhotoDate);
 
-        RecyclerView recyclerTags = findViewById(R.id.recyclerTags);
-        recyclerTags.setLayoutManager(
-                new LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false));
-        tagAdapter = new TagListAdapter(getCurrentPhoto() != null
-                ? getCurrentPhoto().getTags()
-                : new java.util.ArrayList<>(), null);
-        tagAdapter.setLongClickListener(this::showDeleteTagDialog);
-        recyclerTags.setAdapter(tagAdapter);
+        Button btnPrev   = findViewById(R.id.btnPrev);
+        Button btnNext   = findViewById(R.id.btnNext);
+        Button btnAddTag = findViewById(R.id.btnAddTag);
 
-        Button btnPrev = findViewById(R.id.btnPrev);
-        Button btnNext = findViewById(R.id.btnNext);
         btnPrev.setOnClickListener(v -> navigate(-1));
         btnNext.setOnClickListener(v -> navigate(1));
+        btnAddTag.setOnClickListener(v -> showAddTagDialog());
 
         loadCurrentPhoto();
     }
@@ -86,20 +94,14 @@ public class PhotoDisplayActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == android.R.id.home) {
-            finish();
-            return true;
-        }
-        if (id == R.id.action_add_tag) {
-            showAddTagDialog();
-            return true;
-        }
-        if (id == R.id.action_move) {
-            showMoveToAlbumDialog();
-            return true;
-        }
+        if (id == android.R.id.home) { finish(); return true; }
+        if (id == R.id.action_move)  { showMoveToAlbumDialog(); return true; }
         return super.onOptionsItemSelected(item);
     }
+
+    // -------------------------------------------------------------------------
+    // Core display
+    // -------------------------------------------------------------------------
 
     protected Photo getCurrentPhoto() {
         Album album = PhotoLibrary.getInstance().getAlbum(albumName);
@@ -112,13 +114,13 @@ public class PhotoDisplayActivity extends AppCompatActivity {
         if (photo == null) return;
 
         updateTitle();
-        tagAdapter.setTags(photo.getTags());
-        tagAdapter.notifyDataSetChanged();
+        updateDate(photo);
+        rebuildChips(photo);
 
         imagePhoto.setImageBitmap(null);
         String uriStr = photo.getUriString();
         executor.execute(() -> {
-            Bitmap bmp = loadFullBitmap(uriStr);
+            Bitmap bmp = ImageLoader.loadScaled(this, uriStr, 1920);
             mainHandler.post(() -> imagePhoto.setImageBitmap(bmp));
         });
 
@@ -136,10 +138,8 @@ public class PhotoDisplayActivity extends AppCompatActivity {
     private void updateNavButtons() {
         Album album = PhotoLibrary.getInstance().getAlbum(albumName);
         int size = album != null ? album.getPhotos().size() : 0;
-        Button btnPrev = findViewById(R.id.btnPrev);
-        Button btnNext = findViewById(R.id.btnNext);
-        btnPrev.setEnabled(size > 1);
-        btnNext.setEnabled(size > 1);
+        findViewById(R.id.btnPrev).setEnabled(size > 1);
+        findViewById(R.id.btnNext).setEnabled(size > 1);
     }
 
     protected void updateTitle() {
@@ -151,29 +151,72 @@ public class PhotoDisplayActivity extends AppCompatActivity {
         }
     }
 
-    private Bitmap loadFullBitmap(String uriString) {
+    // -------------------------------------------------------------------------
+    // Date
+    // -------------------------------------------------------------------------
+
+    private void updateDate(Photo photo) {
+        executor.execute(() -> {
+            String date = resolveDate(photo.getUriString());
+            mainHandler.post(() -> tvPhotoDate.setText(date));
+        });
+    }
+
+    private String resolveDate(String uriString) {
         try {
             Uri uri = Uri.parse(uriString);
-            BitmapFactory.Options bounds = new BitmapFactory.Options();
-            bounds.inJustDecodeBounds = true;
-            try (InputStream is = getContentResolver().openInputStream(uri)) {
-                if (is == null) return null;
-                BitmapFactory.decodeStream(is, null, bounds);
+            if ("file".equals(uri.getScheme())) {
+                File f = new File(uri.getPath());
+                return DATE_FMT.format(new Date(f.lastModified()));
             }
-            int maxDim = 1920;
-            int inSample = 1;
-            while (bounds.outWidth / inSample > maxDim || bounds.outHeight / inSample > maxDim) {
-                inSample *= 2;
+            // content:// URI — ask MediaStore
+            String[] proj = {MediaStore.Images.Media.DATE_TAKEN,
+                             MediaStore.Images.Media.DATE_ADDED};
+            try (Cursor c = getContentResolver().query(uri, proj, null, null, null)) {
+                if (c != null && c.moveToFirst()) {
+                    long taken = c.getLong(0);
+                    if (taken > 0) return DATE_FMT.format(new Date(taken));
+                    long added = c.getLong(1);
+                    if (added > 0) return DATE_FMT.format(new Date(added * 1000));
+                }
             }
-            BitmapFactory.Options opts = new BitmapFactory.Options();
-            opts.inSampleSize = inSample;
-            try (InputStream is2 = getContentResolver().openInputStream(uri)) {
-                if (is2 == null) return null;
-                return BitmapFactory.decodeStream(is2, null, opts);
-            }
-        } catch (IOException | SecurityException e) {
-            return null;
+        } catch (Exception ignored) {}
+        return "Date unknown";
+    }
+
+    // -------------------------------------------------------------------------
+    // Tags
+    // -------------------------------------------------------------------------
+
+    protected void rebuildChips(Photo photo) {
+        chipGroupTags.removeAllViews();
+        if (photo == null || photo.getTags().isEmpty()) {
+            tvNoTags.setVisibility(View.VISIBLE);
+            chipGroupTags.setVisibility(View.GONE);
+            return;
         }
+        tvNoTags.setVisibility(View.GONE);
+        chipGroupTags.setVisibility(View.VISIBLE);
+        for (Tag tag : photo.getTags()) {
+            Chip chip = new Chip(this);
+            chip.setText(tag.toString());
+            chip.setCloseIconVisible(true);
+            chip.setOnCloseIconClickListener(v -> confirmDeleteTag(photo, tag));
+            chipGroupTags.addView(chip);
+        }
+    }
+
+    private void confirmDeleteTag(Photo photo, Tag tag) {
+        new AlertDialog.Builder(this)
+                .setTitle("Remove Tag")
+                .setMessage("Remove \"" + tag + "\"?")
+                .setPositiveButton("Remove", (d, w) -> {
+                    photo.removeTag(tag);
+                    PhotoLibrary.getInstance().save(this);
+                    rebuildChips(photo);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void showAddTagDialog() {
@@ -181,33 +224,32 @@ public class PhotoDisplayActivity extends AppCompatActivity {
         if (photo == null) return;
 
         android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_tag, null);
-        Spinner spinner = dialogView.findViewById(R.id.spinnerTagType);
-        EditText editValue = dialogView.findViewById(R.id.editTagValue);
+        Spinner spinner      = dialogView.findViewById(R.id.spinnerTagType);
+        EditText editValue   = dialogView.findViewById(R.id.editTagValue);
 
-        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
+        ArrayAdapter<String> sa = new ArrayAdapter<>(this,
                 android.R.layout.simple_spinner_item, new String[]{"person", "location"});
-        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(spinnerAdapter);
+        sa.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(sa);
 
         new AlertDialog.Builder(this)
                 .setTitle("Add Tag")
                 .setView(dialogView)
-                .setPositiveButton("Add", (dialog, which) -> {
+                .setPositiveButton("Add", (d, w) -> {
                     String type  = (String) spinner.getSelectedItem();
                     String value = editValue.getText().toString().trim();
                     if (value.isEmpty()) {
-                        Toast.makeText(this, "Tag value cannot be empty", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, "Value cannot be empty", Toast.LENGTH_SHORT).show();
                         return;
                     }
                     try {
                         Tag tag = new Tag(type, value);
-                        boolean added = photo.addTag(tag);
-                        if (!added) {
-                            Toast.makeText(this, "Tag already exists on this photo", Toast.LENGTH_SHORT).show();
+                        if (!photo.addTag(tag)) {
+                            Toast.makeText(this, "Tag already exists", Toast.LENGTH_SHORT).show();
                             return;
                         }
                         PhotoLibrary.getInstance().save(this);
-                        tagAdapter.notifyDataSetChanged();
+                        rebuildChips(photo);
                     } catch (IllegalArgumentException e) {
                         Toast.makeText(this, "Invalid tag type", Toast.LENGTH_SHORT).show();
                     }
@@ -216,50 +258,32 @@ public class PhotoDisplayActivity extends AppCompatActivity {
                 .show();
     }
 
-    private void showDeleteTagDialog(int position) {
-        Photo photo = getCurrentPhoto();
-        if (photo == null || position >= photo.getTags().size()) return;
-        Tag tag = photo.getTags().get(position);
-
-        new AlertDialog.Builder(this)
-                .setTitle("Delete Tag")
-                .setMessage("Remove tag \"" + tag + "\"?")
-                .setPositiveButton("Remove", (dialog, which) -> {
-                    photo.removeTag(tag);
-                    PhotoLibrary.getInstance().save(this);
-                    tagAdapter.notifyDataSetChanged();
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
-    }
+    // -------------------------------------------------------------------------
+    // Move photo
+    // -------------------------------------------------------------------------
 
     protected void showMoveToAlbumDialog() {
-        java.util.List<Album> allAlbums = PhotoLibrary.getInstance().getAlbums();
-        java.util.List<String> otherNames = new java.util.ArrayList<>();
-        for (Album a : allAlbums) {
-            if (!a.getName().equalsIgnoreCase(albumName)) {
-                otherNames.add(a.getName());
-            }
+        List<Album> all = PhotoLibrary.getInstance().getAlbums();
+        List<String> others = new java.util.ArrayList<>();
+        for (Album a : all) {
+            if (!a.getName().equalsIgnoreCase(albumName)) others.add(a.getName());
         }
-        if (otherNames.isEmpty()) {
-            Toast.makeText(this, "No other albums available", Toast.LENGTH_SHORT).show();
+        if (others.isEmpty()) {
+            Toast.makeText(this, "No other albums", Toast.LENGTH_SHORT).show();
             return;
         }
-        String[] names = otherNames.toArray(new String[0]);
+        String[] names = others.toArray(new String[0]);
         new AlertDialog.Builder(this)
                 .setTitle("Move to Album")
-                .setItems(names, (dialog, which) -> {
-                    movePhotoToAlbum(names[which]);
-                })
+                .setItems(names, (d, which) -> movePhotoToAlbum(names[which]))
                 .show();
     }
 
-    private void movePhotoToAlbum(String targetAlbumName) {
-        Photo photo = getCurrentPhoto();
-        if (photo == null) return;
+    private void movePhotoToAlbum(String targetName) {
+        Photo photo  = getCurrentPhoto();
         Album source = PhotoLibrary.getInstance().getAlbum(albumName);
-        Album target = PhotoLibrary.getInstance().getAlbum(targetAlbumName);
-        if (source == null || target == null) return;
+        Album target = PhotoLibrary.getInstance().getAlbum(targetName);
+        if (photo == null || source == null || target == null) return;
         target.addPhoto(photo);
         source.removePhoto(photo);
         PhotoLibrary.getInstance().save(this);
@@ -267,8 +291,5 @@ public class PhotoDisplayActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onSupportNavigateUp() {
-        finish();
-        return true;
-    }
+    public boolean onSupportNavigateUp() { finish(); return true; }
 }

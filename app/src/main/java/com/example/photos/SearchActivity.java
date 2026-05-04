@@ -2,11 +2,14 @@ package com.example.photos;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.RadioGroup;
 import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
@@ -29,6 +32,7 @@ public class SearchActivity extends AppCompatActivity {
     private AutoCompleteTextView autoCompleteValue2;
     private RadioGroup radioGroupLogic;
     private PhotoGridAdapter resultsAdapter;
+    private TextView tvSearchEmpty;
     private final List<Photo> resultPhotos = new ArrayList<>();
 
     @Override
@@ -66,8 +70,11 @@ public class SearchActivity extends AppCompatActivity {
         autoCompleteValue1.setThreshold(1);
         autoCompleteValue2.setThreshold(1);
 
+        tvSearchEmpty = findViewById(R.id.tvSearchEmpty);
+
         RecyclerView recyclerResults = findViewById(R.id.recyclerResults);
-        recyclerResults.setLayoutManager(new GridLayoutManager(this, 2));
+        recyclerResults.setLayoutManager(new GridLayoutManager(this, 3));
+        recyclerResults.addItemDecoration(new GridSpacingDecoration(1));
         resultsAdapter = new PhotoGridAdapter(resultPhotos, this, this::openPhotoFromResult);
         recyclerResults.setAdapter(resultsAdapter);
 
@@ -119,6 +126,8 @@ public class SearchActivity extends AppCompatActivity {
 
         if (val1.isEmpty()) {
             resultsAdapter.notifyDataSetChanged();
+            tvSearchEmpty.setText("Enter a tag value above and tap Search.");
+            tvSearchEmpty.setVisibility(View.VISIBLE);
             return;
         }
 
@@ -139,6 +148,13 @@ public class SearchActivity extends AppCompatActivity {
         }
 
         resultsAdapter.notifyDataSetChanged();
+        if (resultPhotos.isEmpty()) {
+            tvSearchEmpty.setText("No photos match your search.\nTip: open a photo and tap + to add tags.");
+            tvSearchEmpty.setVisibility(View.VISIBLE);
+        } else {
+            tvSearchEmpty.setVisibility(View.GONE);
+            Toast.makeText(this, resultPhotos.size() + " photo(s) found", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private boolean photoMatchesTag(Photo photo, String type, String prefix) {

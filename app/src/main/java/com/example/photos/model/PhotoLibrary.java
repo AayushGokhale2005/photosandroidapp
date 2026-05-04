@@ -1,15 +1,19 @@
 package com.example.photos.model;
 
 import android.content.Context;
+import android.net.Uri;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -73,6 +77,46 @@ public class PhotoLibrary {
             }
         }
         return null;
+    }
+
+    // -------------------------------------------------------------------------
+    // Stock album seed (runs once on first launch)
+    // -------------------------------------------------------------------------
+
+    public void seedStockAlbum(Context context) {
+        if (getAlbum("Stock") != null) return;  // already seeded
+
+        String[] assetNames;
+        try {
+            assetNames = context.getAssets().list("stock");
+        } catch (IOException e) {
+            return;
+        }
+        if (assetNames == null || assetNames.length == 0) return;
+
+        File stockDir = new File(context.getFilesDir(), "stock");
+        stockDir.mkdirs();
+
+        Album stockAlbum = new Album("Stock");
+        for (String name : assetNames) {
+            File dest = new File(stockDir, name);
+            if (!dest.exists()) {
+                try (InputStream in = context.getAssets().open("stock/" + name);
+                     OutputStream out = new FileOutputStream(dest)) {
+                    byte[] buf = new byte[8192];
+                    int len;
+                    while ((len = in.read(buf)) != -1) out.write(buf, 0, len);
+                } catch (IOException e) {
+                    continue;
+                }
+            }
+            stockAlbum.addPhoto(new Photo(Uri.fromFile(dest).toString()));
+        }
+
+        if (stockAlbum.getPhotoCount() > 0) {
+            albums.add(0, stockAlbum);  // Stock is always first
+            save(context);
+        }
     }
 
     // -------------------------------------------------------------------------
