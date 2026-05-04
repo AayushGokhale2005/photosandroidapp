@@ -78,11 +78,13 @@ public class PhotoDisplayActivity extends AppCompatActivity {
         findViewById(R.id.btnNext).setOnClickListener(v -> navigate(1));
         findViewById(R.id.btnAddTag).setOnClickListener(v -> showAddTagDialog());
 
-        // Apply accent color to Add Tag button stroke
+        // Apply accent color to Add Tag button stroke; remove default vertical insets
         int accent = SettingsManager.get(this).getAccentColor();
         com.google.android.material.button.MaterialButton btnAdd = findViewById(R.id.btnAddTag);
         btnAdd.setStrokeColor(ColorStateList.valueOf(accent));
         btnAdd.setTextColor(accent);
+        btnAdd.setInsetTop(0);
+        btnAdd.setInsetBottom(0);
 
         loadCurrentPhoto();
     }

@@ -48,6 +48,11 @@ public class AlbumActivity extends AppCompatActivity {
         }
         ThemeHelper.applyAccent(this);
 
+        // Tint the whole screen with a very dark shade of the accent color
+        int accent = SettingsManager.get(this).getAccentColor();
+        int bgColor = blendWithBlack(accent, 0.15f);
+        findViewById(R.id.albumRoot).setBackgroundColor(bgColor);
+
         int cols = SettingsManager.get(this).getPhotoCols();
         RecyclerView recycler = findViewById(R.id.recyclerPhotos);
         recycler.setLayoutManager(new GridLayoutManager(this, cols));
@@ -113,6 +118,14 @@ public class AlbumActivity extends AppCompatActivity {
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
+    }
+
+    /** Blends a color toward black. fraction=0 → original, fraction=1 → black. */
+    private static int blendWithBlack(int color, float fraction) {
+        int r = (int)(android.graphics.Color.red(color)   * (1f - fraction));
+        int g = (int)(android.graphics.Color.green(color) * (1f - fraction));
+        int b = (int)(android.graphics.Color.blue(color)  * (1f - fraction));
+        return android.graphics.Color.rgb(r, g, b);
     }
 
     @Override

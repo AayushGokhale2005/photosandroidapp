@@ -101,12 +101,12 @@
                 android:id="@+id/btnAddTag"
                 style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
+                android:layout_height="wrap_content"
                 android:text="+ Add Tag"
                 android:textSize="12sp"
                 android:textColor="@android:color/white"
-                android:paddingStart="10dp"
-                android:paddingEnd="10dp"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
                 app:strokeColor="#66FFFFFF"
                 app:cornerRadius="16dp" />
 
