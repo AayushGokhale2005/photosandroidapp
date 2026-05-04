@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FF6200EE</color>
-    <color name="ic_launcher_foreground">#FFFFFFFF</color>
+    <!-- White background so the dark navy shutter icon stands out clearly -->
+    <color name="ic_launcher_background">#FFFFFFFF</color>
+    <color name="ic_launcher_foreground">#FF0D2137</color>
 </resources>
