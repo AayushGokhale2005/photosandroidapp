@@ -2,8 +2,9 @@ package com.example.photos.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.io.Serializable;
 
-public class Album {
+public class Album implements Serializable {
 
     private String name;
     private final List<Photo> photos;
@@ -42,4 +43,7 @@ public class Album {
     public int getPhotoCount() {
         return photos.size();
     }
+
+    @Override
+    public String toString(){return name;}
 }
