@@ -54,10 +54,11 @@ public class SearchActivity extends AppCompatActivity {
                 android.R.layout.simple_spinner_item, new String[]{"person", "location"});
         typeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerType1.setAdapter(typeAdapter);
-        spinnerType2.setAdapter(new ArrayAdapter<>(this,
-                android.R.layout.simple_spinner_item, new String[]{"person", "location"}));
-        ((ArrayAdapter) spinnerType2.getAdapter())
-                .setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+
+        ArrayAdapter<String> typeAdapter2 = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, new String[]{"person", "location"});
+        typeAdapter2.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerType2.setAdapter(typeAdapter2);
 
         setupAutoComplete();
 
@@ -167,5 +168,13 @@ public class SearchActivity extends AppCompatActivity {
     public boolean onSupportNavigateUp() {
         finish();
         return true;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Refresh autocomplete in case tags were added since this screen was created
+        updateAutoComplete(autoCompleteValue1, (String) spinnerType1.getSelectedItem());
+        updateAutoComplete(autoCompleteValue2, (String) spinnerType2.getSelectedItem());
     }
 }

@@ -36,4 +36,17 @@ public class Photo {
     public boolean hasTag(String type, String value) {
         return tags.contains(new Tag(type, value));
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Photo)) return false;
+        Photo other = (Photo) o;
+        return uriString.equals(other.uriString);
+    }
+
+    @Override
+    public int hashCode() {
+        return uriString.hashCode();
+    }
 }

@@ -12,6 +12,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.photos.model.Photo;
@@ -56,18 +57,20 @@ public class PhotoGridAdapter extends RecyclerView.Adapter<PhotoGridAdapter.View
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_photo_thumb, parent, false);
-        // Force square cells: width = half the parent width
-        int cellSize = parent.getWidth() / 2;
-        if (cellSize > 0) {
-            ViewGroup.LayoutParams lp = view.getLayoutParams();
-            lp.height = cellSize;
-            view.setLayoutParams(lp);
-        }
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        // Enforce square cells using the RecyclerView's current width
+        RecyclerView rv = (RecyclerView) holder.itemView.getParent();
+        if (rv != null && rv.getWidth() > 0) {
+            int columns = ((GridLayoutManager) rv.getLayoutManager()).getSpanCount();
+            int cellSize = rv.getWidth() / columns;
+            ViewGroup.LayoutParams lp = holder.itemView.getLayoutParams();
+            lp.height = cellSize;
+            holder.itemView.setLayoutParams(lp);
+        }
         Photo photo = photos.get(position);
         holder.imageThumb.setImageBitmap(null);
         holder.imageThumb.setBackgroundColor(0xFFCCCCCC);
