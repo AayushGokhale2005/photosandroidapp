@@ -45,8 +45,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:hint="@string/tag_value"
-                    android:inputType="text"
-                    android:threshold="1" />
+                    android:inputType="text" />
 
             </LinearLayout>
 
@@ -69,8 +68,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:hint="@string/tag_value_optional"
-                    android:inputType="text"
-                    android:threshold="1" />
+                    android:inputType="text" />
 
             </LinearLayout>
 

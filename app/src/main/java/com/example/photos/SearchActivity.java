@@ -62,6 +62,10 @@ public class SearchActivity extends AppCompatActivity {
 
         setupAutoComplete();
 
+        // Show suggestions after 1 character
+        autoCompleteValue1.setThreshold(1);
+        autoCompleteValue2.setThreshold(1);
+
         RecyclerView recyclerResults = findViewById(R.id.recyclerResults);
         recyclerResults.setLayoutManager(new GridLayoutManager(this, 2));
         resultsAdapter = new PhotoGridAdapter(resultPhotos, this, this::openPhotoFromResult);
