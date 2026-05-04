@@ -1,16 +1,20 @@
 package com.example.photos.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-public class Photo {
+public class Photo implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final String uriString;
     private final List<Tag> tags;
 
     public Photo(String uriString) {
-        this.uriString = uriString;
-        this.tags      = new ArrayList<>();
+        this.uriString = uriString == null ? "" : uriString.trim();
+        this.tags = new ArrayList<>();
     }
 
     public String getUriString() {
@@ -22,9 +26,10 @@ public class Photo {
     }
 
     public boolean addTag(Tag tag) {
-        if (tags.contains(tag)) {
+        if (tag == null || tags.contains(tag)) {
             return false;
         }
+
         tags.add(tag);
         return true;
     }
@@ -37,6 +42,14 @@ public class Photo {
         return tags.contains(new Tag(type, value));
     }
 
+    public boolean hasTags() {
+        return !tags.isEmpty();
+    }
+
+    public int getTagCount() {
+        return tags.size();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -47,6 +60,11 @@ public class Photo {
 
     @Override
     public int hashCode() {
-        return uriString.hashCode();
+        return Objects.hash(uriString);
+    }
+
+    @Override
+    public String toString() {
+        return uriString;
     }
 }
