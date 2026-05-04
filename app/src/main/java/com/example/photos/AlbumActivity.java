@@ -48,9 +48,10 @@ public class AlbumActivity extends AppCompatActivity {
         }
         ThemeHelper.applyAccent(this);
 
-        // Tint the whole screen with a very dark shade of the accent color
+        // Tint the whole screen: resolve the theme's surface color then
+        // overlay just 10% of the accent so it matches the home screen tone.
         int accent = SettingsManager.get(this).getAccentColor();
-        int bgColor = blendWithBlack(accent, 0.15f);
+        int bgColor = blendAccentOnSurface(accent, 0.10f);
         findViewById(R.id.albumRoot).setBackgroundColor(bgColor);
 
         int cols = SettingsManager.get(this).getPhotoCols();
@@ -120,11 +121,18 @@ public class AlbumActivity extends AppCompatActivity {
                 .show();
     }
 
-    /** Blends a color toward black. fraction=0 → original, fraction=1 → black. */
-    private static int blendWithBlack(int color, float fraction) {
-        int r = (int)(android.graphics.Color.red(color)   * (1f - fraction));
-        int g = (int)(android.graphics.Color.green(color) * (1f - fraction));
-        int b = (int)(android.graphics.Color.blue(color)  * (1f - fraction));
+    /**
+     * Resolves the theme's colorSurface (which auto-switches for dark/light mode)
+     * and blends {@code mix} fraction of the accent color on top.
+     * mix=0.10 → 10% accent, 90% surface — subtle tint that matches the home screen.
+     */
+    private int blendAccentOnSurface(int accent, float mix) {
+        android.util.TypedValue tv = new android.util.TypedValue();
+        getTheme().resolveAttribute(android.R.attr.colorBackground, tv, true);
+        int surface = tv.data;
+        int r = (int)(android.graphics.Color.red(surface)   * (1f - mix) + android.graphics.Color.red(accent)   * mix);
+        int g = (int)(android.graphics.Color.green(surface) * (1f - mix) + android.graphics.Color.green(accent) * mix);
+        int b = (int)(android.graphics.Color.blue(surface)  * (1f - mix) + android.graphics.Color.blue(accent)  * mix);
         return android.graphics.Color.rgb(r, g, b);
     }
 
