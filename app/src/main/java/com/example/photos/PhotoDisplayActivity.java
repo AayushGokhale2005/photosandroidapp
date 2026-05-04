@@ -8,9 +8,14 @@ import android.os.Handler;
 import android.os.Looper;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.Spinner;
+import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -19,6 +24,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.photos.model.Album;
 import com.example.photos.model.Photo;
 import com.example.photos.model.PhotoLibrary;
+import com.example.photos.model.Tag;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,6 +66,7 @@ public class PhotoDisplayActivity extends AppCompatActivity {
         tagAdapter = new TagListAdapter(getCurrentPhoto() != null
                 ? getCurrentPhoto().getTags()
                 : new java.util.ArrayList<>(), null);
+        tagAdapter.setLongClickListener(this::showDeleteTagDialog);
         recyclerTags.setAdapter(tagAdapter);
 
         Button btnPrev = findViewById(R.id.btnPrev);
@@ -81,6 +88,14 @@ public class PhotoDisplayActivity extends AppCompatActivity {
         int id = item.getItemId();
         if (id == android.R.id.home) {
             finish();
+            return true;
+        }
+        if (id == R.id.action_add_tag) {
+            showAddTagDialog();
+            return true;
+        }
+        if (id == R.id.action_move) {
+            showMoveToAlbumDialog();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -159,6 +174,96 @@ public class PhotoDisplayActivity extends AppCompatActivity {
         } catch (IOException | SecurityException e) {
             return null;
         }
+    }
+
+    private void showAddTagDialog() {
+        Photo photo = getCurrentPhoto();
+        if (photo == null) return;
+
+        android.view.View dialogView = getLayoutInflater().inflate(R.layout.dialog_add_tag, null);
+        Spinner spinner = dialogView.findViewById(R.id.spinnerTagType);
+        EditText editValue = dialogView.findViewById(R.id.editTagValue);
+
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, new String[]{"person", "location"});
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(spinnerAdapter);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Add Tag")
+                .setView(dialogView)
+                .setPositiveButton("Add", (dialog, which) -> {
+                    String type  = (String) spinner.getSelectedItem();
+                    String value = editValue.getText().toString().trim();
+                    if (value.isEmpty()) {
+                        Toast.makeText(this, "Tag value cannot be empty", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    try {
+                        Tag tag = new Tag(type, value);
+                        boolean added = photo.addTag(tag);
+                        if (!added) {
+                            Toast.makeText(this, "Tag already exists on this photo", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        PhotoLibrary.getInstance().save(this);
+                        tagAdapter.notifyDataSetChanged();
+                    } catch (IllegalArgumentException e) {
+                        Toast.makeText(this, "Invalid tag type", Toast.LENGTH_SHORT).show();
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    private void showDeleteTagDialog(int position) {
+        Photo photo = getCurrentPhoto();
+        if (photo == null || position >= photo.getTags().size()) return;
+        Tag tag = photo.getTags().get(position);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Delete Tag")
+                .setMessage("Remove tag \"" + tag + "\"?")
+                .setPositiveButton("Remove", (dialog, which) -> {
+                    photo.removeTag(tag);
+                    PhotoLibrary.getInstance().save(this);
+                    tagAdapter.notifyDataSetChanged();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+    }
+
+    protected void showMoveToAlbumDialog() {
+        java.util.List<Album> allAlbums = PhotoLibrary.getInstance().getAlbums();
+        java.util.List<String> otherNames = new java.util.ArrayList<>();
+        for (Album a : allAlbums) {
+            if (!a.getName().equalsIgnoreCase(albumName)) {
+                otherNames.add(a.getName());
+            }
+        }
+        if (otherNames.isEmpty()) {
+            Toast.makeText(this, "No other albums available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        String[] names = otherNames.toArray(new String[0]);
+        new AlertDialog.Builder(this)
+                .setTitle("Move to Album")
+                .setItems(names, (dialog, which) -> {
+                    movePhotoToAlbum(names[which]);
+                })
+                .show();
+    }
+
+    private void movePhotoToAlbum(String targetAlbumName) {
+        Photo photo = getCurrentPhoto();
+        if (photo == null) return;
+        Album source = PhotoLibrary.getInstance().getAlbum(albumName);
+        Album target = PhotoLibrary.getInstance().getAlbum(targetAlbumName);
+        if (source == null || target == null) return;
+        target.addPhoto(photo);
+        source.removePhoto(photo);
+        PhotoLibrary.getInstance().save(this);
+        finish();
     }
 
     @Override
