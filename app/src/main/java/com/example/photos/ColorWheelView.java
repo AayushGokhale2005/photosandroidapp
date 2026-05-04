@@ -43,10 +43,11 @@ public class ColorWheelView extends View {
     private void init() {
         selectorPaint.setStyle(Paint.Style.STROKE);
         selectorPaint.setStrokeWidth(3f);
-        selectorPaint.setColor(Color.WHITE);
+        // Dark ring so the selector dot is visible against both light and dark dialog backgrounds
+        selectorPaint.setColor(0xFF222222);
         borderPaint.setStyle(Paint.Style.STROKE);
         borderPaint.setStrokeWidth(2f);
-        borderPaint.setColor(0x44FFFFFF);
+        borderPaint.setColor(0x44000000);
     }
 
     public void setOnColorChangedListener(OnColorChangedListener l) { this.listener = l; }
