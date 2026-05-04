@@ -46,10 +46,13 @@ public class AlbumActivity extends AppCompatActivity {
             getSupportActionBar().setTitle(albumName);
             getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         }
+        ThemeHelper.applyAccent(this);
 
+        int cols = SettingsManager.get(this).getPhotoCols();
         RecyclerView recycler = findViewById(R.id.recyclerPhotos);
-        recycler.setLayoutManager(new GridLayoutManager(this, 3));
+        recycler.setLayoutManager(new GridLayoutManager(this, cols));
         recycler.addItemDecoration(new GridSpacingDecoration(2));
+        recycler.setHasFixedSize(true);
 
         Album album = PhotoLibrary.getInstance().getAlbum(albumName);
         adapter = new PhotoGridAdapter(

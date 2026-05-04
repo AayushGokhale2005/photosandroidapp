@@ -8,6 +8,7 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,22 +20,33 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 public class MainActivity extends AppCompatActivity {
 
     private AlbumListAdapter adapter;
+    private GridLayoutManager glm;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Apply dark/light mode before super so theme is correct
+        SettingsManager sm = SettingsManager.get(this);
+        AppCompatDelegate.setDefaultNightMode(
+                sm.isDarkMode() ? AppCompatDelegate.MODE_NIGHT_YES
+                               : AppCompatDelegate.MODE_NIGHT_NO);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        ThemeHelper.applyAccent(this);
+
         PhotoLibrary.getInstance().load(this);
         PhotoLibrary.getInstance().seedStockAlbum(this);
 
+        int cols = sm.getAlbumCols();
         RecyclerView recycler = findViewById(R.id.recyclerAlbums);
-        GridLayoutManager glm = new GridLayoutManager(this, 2);
+        glm = new GridLayoutManager(this, cols);
         recycler.setLayoutManager(glm);
-        recycler.addItemDecoration(new GridSpacingDecoration(2));
+        recycler.addItemDecoration(new GridSpacingDecoration(cols));
+        recycler.setHasFixedSize(true);
 
         adapter = new AlbumListAdapter(
                 PhotoLibrary.getInstance().getAlbums(),
@@ -56,8 +68,13 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(android.view.MenuItem item) {
-        if (item.getItemId() == R.id.action_search) {
+        int id = item.getItemId();
+        if (id == R.id.action_search) {
             startActivity(new Intent(this, SearchActivity.class));
+            return true;
+        }
+        if (id == R.id.action_settings) {
+            startActivity(new Intent(this, SettingsActivity.class));
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -146,6 +163,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        // Refresh grid columns (may have changed in settings)
+        int cols = SettingsManager.get(this).getAlbumCols();
+        glm.setSpanCount(cols);
         adapter.notifyDataSetChanged();
+        ThemeHelper.applyAccent(this);
     }
 }

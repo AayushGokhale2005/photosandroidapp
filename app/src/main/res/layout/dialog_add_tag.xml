@@ -9,14 +9,19 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Type"
+        android:text="Tag type (key)"
         android:textStyle="bold"
+        android:textSize="13sp"
         android:layout_marginBottom="4dp" />
 
-    <Spinner
-        android:id="@+id/spinnerTagType"
+    <!-- Editable autocomplete — type an existing type or a brand-new one -->
+    <AutoCompleteTextView
+        android:id="@+id/autoCompleteTagType"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:hint="e.g. person, location, event, year…"
+        android:inputType="text"
+        android:completionThreshold="1"
         android:layout_marginBottom="12dp" />
 
     <TextView
@@ -24,6 +29,7 @@
         android:layout_height="wrap_content"
         android:text="Value"
         android:textStyle="bold"
+        android:textSize="13sp"
         android:layout_marginBottom="4dp" />
 
     <EditText
@@ -31,6 +37,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:inputType="text"
-        android:hint="e.g. Alice, New York" />
+        android:hint="e.g. Alice, New York, Summer 2025" />
 
 </LinearLayout>

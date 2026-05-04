@@ -8,20 +8,16 @@ public class Tag {
     private final String value;
 
     public Tag(String type, String value) {
-        if (!type.equals("person") && !type.equals("location")) {
-            throw new IllegalArgumentException("Tag type must be 'person' or 'location'");
-        }
-        this.type  = type.trim().toLowerCase();
-        this.value = value.trim().toLowerCase();
+        String t = type  == null ? "" : type.trim().toLowerCase();
+        String v = value == null ? "" : value.trim().toLowerCase();
+        if (t.isEmpty()) throw new IllegalArgumentException("Tag type cannot be empty");
+        if (v.isEmpty()) throw new IllegalArgumentException("Tag value cannot be empty");
+        this.type  = t;
+        this.value = v;
     }
 
-    public String getType() {
-        return type;
-    }
-
-    public String getValue() {
-        return value;
-    }
+    public String getType()  { return type; }
+    public String getValue() { return value; }
 
     @Override
     public boolean equals(Object o) {
@@ -32,12 +28,8 @@ public class Tag {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(type, value);
-    }
+    public int hashCode() { return Objects.hash(type, value); }
 
     @Override
-    public String toString() {
-        return type + ": " + value;
-    }
+    public String toString() { return type + ": " + value; }
 }

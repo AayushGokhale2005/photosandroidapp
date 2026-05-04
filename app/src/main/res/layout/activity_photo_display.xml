@@ -1,76 +1,83 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:fitsSystemWindows="true"
-    android:background="@android:color/black">
+    android:background="@android:color/black"
+    android:fitsSystemWindows="true">
 
-    <!-- Toolbar -->
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
+    <!-- Full-screen photo -->
+    <ImageView
+        android:id="@+id/imageViewPhoto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitCenter"
+        android:contentDescription="Photo" />
+
+    <!-- Translucent top bar with back + overflow -->
+    <LinearLayout
+        android:id="@+id/topBar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        android:elevation="4dp"
-        app:navigationIcon="@drawable/ic_back"
-        app:titleTextColor="@android:color/white" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="4dp"
+        android:paddingEnd="8dp"
+        android:background="#99000000">
 
-    <!-- Full-bleed image — takes all remaining vertical space -->
-    <ImageView
-        android:id="@+id/imagePhoto"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:scaleType="fitCenter"
-        android:background="@android:color/black"
-        android:contentDescription="@string/photo" />
+        <ImageButton
+            android:id="@+id/btnBack"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_back"
+            android:tint="@android:color/white"
+            android:contentDescription="Back" />
 
-    <!-- Bottom info card (white surface) -->
+        <TextView
+            android:id="@+id/tvPhotoTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@android:color/white"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:paddingStart="4dp" />
+
+        <ImageButton
+            android:id="@+id/btnMoveAlbum"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@android:drawable/ic_menu_share"
+            android:tint="@android:color/white"
+            android:contentDescription="Move to album" />
+
+    </LinearLayout>
+
+    <!-- Glassmorphic bottom sheet -->
     <LinearLayout
+        android:id="@+id/bottomCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
         android:orientation="vertical"
-        android:background="#FFFFFF"
-        android:elevation="8dp">
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="24dp"
+        android:background="#CC000000">
 
-        <!-- Date row -->
-        <LinearLayout
-            android:layout_width="match_parent"
+        <!-- Date -->
+        <TextView
+            android:id="@+id/tvPhotoDate"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="12dp"
-            android:paddingBottom="4dp">
-
-            <ImageView
-                android:layout_width="18dp"
-                android:layout_height="18dp"
-                android:src="@android:drawable/ic_menu_my_calendar"
-                android:layout_marginEnd="8dp"
-                android:contentDescription="Date" />
-
-            <TextView
-                android:id="@+id/tvPhotoDate"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="#555555"
-                android:text="—" />
-
-        </LinearLayout>
-
-        <!-- Divider -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginEnd="16dp"
-            android:background="#EEEEEE" />
+            android:textColor="#BBFFFFFF"
+            android:textSize="12sp"
+            android:layout_marginBottom="8dp" />
 
         <!-- Tags header row -->
         <LinearLayout
@@ -78,61 +85,48 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="8dp"
-            android:paddingTop="8dp"
-            android:paddingBottom="4dp">
+            android:layout_marginBottom="8dp">
 
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:text="Tags"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
                 android:textStyle="bold"
-                android:textSize="14sp"
-                android:textColor="#222222" />
+                android:letterSpacing="0.05" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnAddTag"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="32dp"
                 android:text="+ Add Tag"
-                android:textSize="13sp"
-                app:strokeColor="?attr/colorPrimary"
-                app:strokeWidth="1dp"
-                android:textColor="?attr/colorPrimary" />
+                android:textSize="12sp"
+                android:textColor="@android:color/white"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
+                app:strokeColor="#66FFFFFF"
+                app:cornerRadius="16dp" />
 
         </LinearLayout>
 
-        <!-- Tag chips horizontal scroll -->
-        <HorizontalScrollView
+        <!-- Tags chip group (wraps to multiple lines) -->
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupTags"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingBottom="8dp"
-            android:scrollbars="none">
+            app:chipSpacingHorizontal="6dp"
+            app:chipSpacingVertical="4dp" />
 
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupTags"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:singleLine="true" />
-
-        </HorizontalScrollView>
-
-        <!-- "No tags" placeholder -->
         <TextView
             android:id="@+id/tvNoTags"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="8dp"
-            android:text="No tags yet — tap Add Tag to label this photo."
+            android:text="No tags yet — tap + Add Tag"
+            android:textColor="#66FFFFFF"
             android:textSize="12sp"
-            android:textColor="#999999"
             android:visibility="gone" />
 
         <!-- Prev / Next navigation -->
@@ -140,28 +134,35 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="12dp">
+            android:gravity="center"
+            android:layout_marginTop="12dp">
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPrev"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:text="@string/previous"
-                android:layout_marginEnd="4dp" />
+                android:text="‹ Prev"
+                android:textColor="@android:color/white"
+                app:strokeColor="#66FFFFFF"
+                app:cornerRadius="20dp"
+                android:layout_marginEnd="8dp" />
 
-            <Button
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnNext"
+                style="?attr/materialButtonOutlinedStyle"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="40dp"
                 android:layout_weight="1"
-                android:text="@string/next"
-                android:layout_marginStart="4dp" />
+                android:text="Next ›"
+                android:textColor="@android:color/white"
+                app:strokeColor="#66FFFFFF"
+                app:cornerRadius="20dp"
+                android:layout_marginStart="8dp" />
 
         </LinearLayout>
 
     </LinearLayout>
 
-</LinearLayout>
+</FrameLayout>
