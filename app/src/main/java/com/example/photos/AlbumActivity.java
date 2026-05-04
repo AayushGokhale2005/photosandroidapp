@@ -49,7 +49,7 @@ public class AlbumActivity extends AppCompatActivity {
 
         RecyclerView recycler = findViewById(R.id.recyclerPhotos);
         recycler.setLayoutManager(new GridLayoutManager(this, 3));
-        recycler.addItemDecoration(new GridSpacingDecoration(1));
+        recycler.addItemDecoration(new GridSpacingDecoration(2));
 
         Album album = PhotoLibrary.getInstance().getAlbum(albumName);
         adapter = new PhotoGridAdapter(

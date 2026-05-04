@@ -3,15 +3,13 @@ package com.example.photos;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
-import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.photos.model.Album;
@@ -34,9 +32,13 @@ public class MainActivity extends AppCompatActivity {
         PhotoLibrary.getInstance().seedStockAlbum(this);
 
         RecyclerView recycler = findViewById(R.id.recyclerAlbums);
-        recycler.setLayoutManager(new LinearLayoutManager(this));
+        GridLayoutManager glm = new GridLayoutManager(this, 2);
+        recycler.setLayoutManager(glm);
+        recycler.addItemDecoration(new GridSpacingDecoration(2));
+
         adapter = new AlbumListAdapter(
                 PhotoLibrary.getInstance().getAlbums(),
+                this,
                 this::onAlbumClick,
                 this::onAlbumLongClick
         );
@@ -47,13 +49,13 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(android.view.Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+    public boolean onOptionsItemSelected(android.view.MenuItem item) {
         if (item.getItemId() == R.id.action_search) {
             startActivity(new Intent(this, SearchActivity.class));
             return true;
@@ -72,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
                 .setTitle(album.getName())
                 .setItems(new String[]{"Rename", "Delete"}, (dialog, which) -> {
                     if (which == 0) showRenameAlbumDialog(album);
-                    else showDeleteAlbumDialog(album);
+                    else           showDeleteAlbumDialog(album);
                 })
                 .show();
     }
@@ -85,15 +87,14 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("New Album")
                 .setView(input)
-                .setPositiveButton("Create", (dialog, which) -> {
+                .setPositiveButton("Create", (d, w) -> {
                     String name = input.getText().toString().trim();
                     if (name.isEmpty()) {
                         Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    boolean added = PhotoLibrary.getInstance().addAlbum(new Album(name));
-                    if (!added) {
-                        Toast.makeText(this, "Album \"" + name + "\" already exists", Toast.LENGTH_SHORT).show();
+                    if (!PhotoLibrary.getInstance().addAlbum(new Album(name))) {
+                        Toast.makeText(this, "Album already exists", Toast.LENGTH_SHORT).show();
                         return;
                     }
                     PhotoLibrary.getInstance().save(this);
@@ -112,15 +113,14 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Rename Album")
                 .setView(input)
-                .setPositiveButton("Rename", (dialog, which) -> {
+                .setPositiveButton("Rename", (d, w) -> {
                     String newName = input.getText().toString().trim();
                     if (newName.isEmpty()) {
                         Toast.makeText(this, "Name cannot be empty", Toast.LENGTH_SHORT).show();
                         return;
                     }
-                    boolean renamed = PhotoLibrary.getInstance().renameAlbum(album.getName(), newName);
-                    if (!renamed) {
-                        Toast.makeText(this, "Album \"" + newName + "\" already exists", Toast.LENGTH_SHORT).show();
+                    if (!PhotoLibrary.getInstance().renameAlbum(album.getName(), newName)) {
+                        Toast.makeText(this, "Album already exists", Toast.LENGTH_SHORT).show();
                         return;
                     }
                     PhotoLibrary.getInstance().save(this);
@@ -134,7 +134,7 @@ public class MainActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Album")
                 .setMessage("Delete \"" + album.getName() + "\"?")
-                .setPositiveButton("Delete", (dialog, which) -> {
+                .setPositiveButton("Delete", (d, w) -> {
                     PhotoLibrary.getInstance().deleteAlbum(album.getName());
                     PhotoLibrary.getInstance().save(this);
                     adapter.notifyDataSetChanged();

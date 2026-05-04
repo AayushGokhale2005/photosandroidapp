@@ -7,6 +7,8 @@
         <item name="colorSecondary">#FF03DAC5</item>
         <item name="colorSecondaryVariant">#FF018786</item>
         <item name="colorOnSecondary">@android:color/black</item>
-        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
+        <!-- Status bar matches toolbar -->
+        <item name="android:statusBarColor">#FF3700B3</item>
+        <item name="android:windowLightStatusBar">false</item>
     </style>
 </resources>
