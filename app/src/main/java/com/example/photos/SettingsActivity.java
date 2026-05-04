@@ -4,11 +4,10 @@ import android.app.Dialog;
 import android.content.res.ColorStateList;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
+import android.widget.TextView;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.Toolbar;
@@ -33,7 +32,12 @@ public class SettingsActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        ThemeHelper.applyAccent(this);
+        colorSwatch = findViewById(R.id.colorSwatch);
+        toggleAlbumCols = findViewById(R.id.toggleAlbumCols);
+        togglePhotoCols = findViewById(R.id.togglePhotoCols);
+
+        // Apply accent to toolbar, FAB, headers, toggle buttons
+        applyAccentToPage();
 
         SwitchMaterial switchDark = findViewById(R.id.switchDarkMode);
         switchDark.setChecked(sm.isDarkMode());
@@ -45,13 +49,8 @@ public class SettingsActivity extends AppCompatActivity {
             recreate();
         });
 
-        colorSwatch = findViewById(R.id.colorSwatch);
         updateSwatch(sm.getAccentColor());
-
         findViewById(R.id.rowAccentColor).setOnClickListener(v -> showColorPicker());
-
-        toggleAlbumCols = findViewById(R.id.toggleAlbumCols);
-        togglePhotoCols = findViewById(R.id.togglePhotoCols);
 
         selectAlbumBtn(sm.getAlbumCols());
         selectPhotoBtn(sm.getPhotoCols());
@@ -69,6 +68,44 @@ public class SettingsActivity extends AppCompatActivity {
             else if (checkedId == R.id.btnPhoto3) sm.setPhotoCols(3);
             else sm.setPhotoCols(4);
         });
+    }
+
+    /** Applies the current accent color to every tintable widget on this screen. */
+    private void applyAccentToPage() {
+        int accent = sm.getAccentColor();
+        ColorStateList accentCsl = ColorStateList.valueOf(accent);
+
+        // Toolbar + status bar via ThemeHelper
+        ThemeHelper.applyAccent(this);
+
+        // Section header labels
+        TextView tvAppearance = findViewById(R.id.tvHeaderAppearance);
+        TextView tvGrid       = findViewById(R.id.tvHeaderGrid);
+        if (tvAppearance != null) tvAppearance.setTextColor(accent);
+        if (tvGrid != null)       tvGrid.setTextColor(accent);
+
+        // Toggle button group strokes and checked state
+        applyToggleTint(toggleAlbumCols, accent);
+        applyToggleTint(togglePhotoCols, accent);
+    }
+
+    private void applyToggleTint(MaterialButtonToggleGroup group, int accent) {
+        if (group == null) return;
+        ColorStateList csl = ColorStateList.valueOf(accent);
+        for (int i = 0; i < group.getChildCount(); i++) {
+            com.google.android.material.button.MaterialButton btn =
+                    (com.google.android.material.button.MaterialButton) group.getChildAt(i);
+            btn.setStrokeColor(csl);
+            btn.setRippleColor(csl);
+            // Color the text: accent when checked, default otherwise
+            int[][] states = {{android.R.attr.state_checked}, {}};
+            int[] colors   = {0xFFFFFFFF, accent};
+            btn.setTextColor(new ColorStateList(states, colors));
+            // Background: filled accent when checked, transparent otherwise
+            int[][] bgStates = {{android.R.attr.state_checked}, {}};
+            int[] bgColors   = {accent, 0x00000000};
+            btn.setBackgroundTintList(new ColorStateList(bgStates, bgColors));
+        }
     }
 
     private void selectAlbumBtn(int cols) {
@@ -90,7 +127,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void showColorPicker() {
-        Dialog dialog = new Dialog(this, R.style.Dialog_Transparent);  // transparent bg
+        Dialog dialog = new Dialog(this, R.style.Dialog_Transparent);
         dialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
         dialog.setContentView(R.layout.dialog_color_picker);
 
@@ -112,7 +149,8 @@ public class SettingsActivity extends AppCompatActivity {
             int chosen = wheel.getColor();
             sm.setAccentColor(chosen);
             updateSwatch(chosen);
-            ThemeHelper.applyAccent(this);
+            // Re-tint everything on this page immediately
+            applyAccentToPage();
             dialog.dismiss();
         });
 

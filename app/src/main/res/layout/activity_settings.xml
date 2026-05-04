@@ -36,6 +36,7 @@
 
             <!-- ══ APPEARANCE ══ -->
             <TextView
+                android:id="@+id/tvHeaderAppearance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="APPEARANCE"
@@ -147,6 +148,7 @@
 
             <!-- ══ GRID SIZE ══ -->
             <TextView
+                android:id="@+id/tvHeaderGrid"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="GRID SIZE"
