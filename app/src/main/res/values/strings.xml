@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Photos</string>
+    <string name="new_album">New Album</string>
+    <string name="add_photo">Add Photo</string>
+    <string name="photo">Photo</string>
+    <string name="previous">Previous</string>
+    <string name="next">Next</string>
+    <string name="search">Search</string>
+    <string name="tag_value">Tag value</string>
+    <string name="tag_value_optional">Tag value (optional)</string>
+</resources>
